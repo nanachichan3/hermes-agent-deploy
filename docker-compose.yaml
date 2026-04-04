@@ -14,6 +14,7 @@ services:
       - ./SOUL.md:/home/hermes/SOUL.md:ro
     environment:
       # Runtime env vars override baked values
+      - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     ports:
