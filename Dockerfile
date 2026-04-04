@@ -20,10 +20,11 @@ RUN useradd -m -s /bin/bash --uid 1000 hermes
 # Create hermes home
 RUN mkdir -p /home/hermes && chown hermes:hermes /home/hermes
 
-# Install hermes-agent from GitHub (all extras)
+# Install hermes-agent from GitHub (all extras) + psycopg2 for bot coordination
 RUN uv venv /opt/venv --python 3.11 && \
     uv pip install --python /opt/venv/bin/python \
-        "git+https://github.com/NousResearch/hermes-agent[messaging,cron,cli,honcho]"
+        "git+https://github.com/NousResearch/hermes-agent[messaging,cron,cli,honcho]" \
+        psycopg2-binary
 
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -60,7 +61,8 @@ RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
 # Copy entrypoint and SOUL.md (baked into image - prevents directory mismatch with volumes)
 COPY entrypoint.sh /entrypoint.sh
 COPY SOUL.md /home/hermes/SOUL.md
-RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md
+COPY bot_coord.py /home/hermes/bot_coord.py
+RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md /home/hermes/bot_coord.py
 
 WORKDIR /home/hermes
 
