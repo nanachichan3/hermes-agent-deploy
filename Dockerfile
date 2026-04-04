@@ -37,7 +37,7 @@ RUN echo "# Build-time config" > /home/hermes/.env && \
     echo "GATEWAY_ALLOW_ALL_USERS=false" >> /home/hermes/.env && \
     echo "DISCORD_ALLOWED_USERS=588858125126336544" >> /home/hermes/.env && \
     echo "DISCORD_REQUIRE_MENTION=false" >> /home/hermes/.env && \
-    echo "DISCORD_ALLOW_BOTS=mentions" >> /home/hermes/.env && \
+    echo "DISCORD_ALLOW_BOTS=all" >> /home/hermes/.env && \
     echo "DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643" >> /home/hermes/.env && \
     echo "ELEVENLABS_API_KEY=" >> /home/hermes/.env && \
     echo "FALAI_API_KEY=" >> /home/hermes/.env && \
