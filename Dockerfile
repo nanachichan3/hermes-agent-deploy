@@ -20,6 +20,10 @@ RUN useradd -m -s /bin/bash --uid 1000 hermes
 # Create hermes home
 RUN mkdir -p /home/hermes && chown hermes:hermes /home/hermes
 
+# Install gosu for clean privilege drop (preserves all env vars unlike su)
+RUN curl -LsSf https://github.com/tianon/gosu/releases/download/1.23/gosu-amd64 -o /usr/local/bin/gosu \
+    && chmod +x /usr/local/bin/gosu
+
 # Install hermes-agent from GitHub (all extras)
 RUN uv venv /opt/venv --python 3.11 && \
     uv pip install --python /opt/venv/bin/python \
