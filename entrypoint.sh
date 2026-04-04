@@ -2,14 +2,13 @@
 set -e
 
 HERMES_HOME="${HERMES_HOME:-/home/hermes}"
+HERMES_CONFIG_DIR="$HERMES_HOME/.hermes"
 
 # Ensure required dirs exist
-mkdir -p "$HERMES_HOME"/{sessions,memories,skills,cron,backups}
+mkdir -p "$HERMES_CONFIG_DIR"/{sessions,memories,skills,cron,backups}
 
 # ============================================================
-# Step 1: Resolve HERMES_MODEL with defaults FIRST
-# Use := to catch both unset AND empty-string values
-# This is the PRIMARY fix for "No models provided" error
+# Apply defaults for vars that might be empty strings from Coolify
 # ============================================================
 if [ -z "$HERMES_MODEL" ]; then
     HERMES_MODEL="minimax/minimax-m2.7"
@@ -24,21 +23,15 @@ DISCORD_ALLOWED_USERS="${DISCORD_ALLOWED_USERS:-588858125126336544}"
 DISCORD_REQUIRE_MENTION="${DISCORD_REQUIRE_MENTION:-false}"
 DISCORD_FREE_RESPONSE_CHANNELS="${DISCORD_FREE_RESPONSE_CHANNELS:-1484900474363842643}"
 
-# Debug: log resolved env vars to a file in the volume
+# Write debug log
 {
-    echo "=== Entrypoint Debug ==="
     echo "HERMES_MODEL=$HERMES_MODEL"
     echo "HERMES_INFERENCE_PROVIDER=$HERMES_INFERENCE_PROVIDER"
-    echo "HERMES_GATEWAY_PORT=$HERMES_GATEWAY_PORT"
-    echo "PWD=$(pwd)"
-    echo "========================"
+    echo "HERMES_CONFIG_DIR=$HERMES_CONFIG_DIR"
 } > "$HERMES_HOME/entrypt.log"
 
-# ============================================================
-# Step 2: Write .env for hermes (with explicit model value)
-# ============================================================
-cat > "$HERMES_HOME/.env" << ENVEOF
-HERMES_MODEL=${HERMES_MODEL}
+# Write .env (hermes reads this via python-dotenv from $HERMES_CONFIG_DIR/.env)
+cat > "$HERMES_CONFIG_DIR/.env" << ENVEOF
 HERMES_INFERENCE_PROVIDER=${HERMES_INFERENCE_PROVIDER}
 HERMES_GATEWAY_PORT=${HERMES_GATEWAY_PORT}
 HERMES_BACKGROUND_NOTIFICATIONS=${HERMES_BACKGROUND_NOTIFICATIONS}
@@ -50,30 +43,25 @@ OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
 ENVEOF
 
-# ============================================================
-# Step 3: Write config.yaml with the resolved model
-# ============================================================
-cat > "$HERMES_HOME/config.yaml" << CFGEOF
-model: "${HERMES_MODEL}"
-fallback_providers: []
+# Write config.yaml at the correct location: ~/.hermes/config.yaml
+# This is where hermes reads the model from
+cat > "$HERMES_CONFIG_DIR/config.yaml" << CFGEOF
+model:
+  default: "${HERMES_MODEL}"
+  fallback_providers: []
+inference:
+  provider: "${HERMES_INFERENCE_PROVIDER}"
 CFGEOF
 
 chown -R hermes:hermes "$HERMES_HOME"
+chown -R hermes:hermes "$HERMES_CONFIG_DIR"
 
-# ============================================================
-# Step 4: Drop to hermes user and run
-# Use su exec pattern that passes vars explicitly
-# ============================================================
+# Run as hermes user
 exec su hermes -c "
-    export HERMES_MODEL='${HERMES_MODEL}'
+    export HOME=/home/hermes
     export HERMES_INFERENCE_PROVIDER='${HERMES_INFERENCE_PROVIDER}'
-    export HERMES_GATEWAY_PORT='${HERMES_GATEWAY_PORT}'
-    export HERMES_BACKGROUND_NOTIFICATIONS='${HERMES_BACKGROUND_NOTIFICATIONS}'
-    export GATEWAY_ALLOW_ALL_USERS='${GATEWAY_ALLOW_ALL_USERS}'
-    export DISCORD_ALLOWED_USERS='${DISCORD_ALLOWED_USERS}'
-    export DISCORD_REQUIRE_MENTION='${DISCORD_REQUIRE_MENTION}'
-    export DISCORD_FREE_RESPONSE_CHANNELS='${DISCORD_FREE_RESPONSE_CHANNELS}'
     export OPENROUTER_API_KEY='${OPENROUTER_API_KEY:-}'
     export DISCORD_BOT_TOKEN='${DISCORD_BOT_TOKEN:-}'
-    /opt/venv/bin/hermes gateway run
+    cd /home/hermes
+    exec /opt/venv/bin/hermes gateway run
 "
