@@ -23,6 +23,7 @@ services:
       - HERMES_BACKGROUND_NOTIFICATIONS=result
     ports:
       - "18790:18790"
+    # Entrypoint creates ~/.hermes/.env then starts gateway
 
 volumes:
   hermes-data:

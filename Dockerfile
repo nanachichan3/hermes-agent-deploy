@@ -21,10 +21,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Create hermes user
 RUN useradd -m -s /bin/bash hermes
 
+# Copy and set up entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Mount point for persistent data (sessions, memory, skills all persist here)
 VOLUME ["/home/hermes/.hermes"]
 
 WORKDIR /home/hermes
 
-# Default: start gateway
+ENTRYPOINT ["/entrypoint.sh"]
+# Default CMD - overridden by docker-compose command
 CMD ["hermes", "gateway", "start"]
