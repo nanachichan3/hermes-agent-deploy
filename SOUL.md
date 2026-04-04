@@ -88,3 +88,27 @@ Key rules:
 - Lock backgrounds = generate once, reuse forever
 - Seedance duration must be "4","5","6","7","8" not "3"
 
+
+---
+
+## Git Push Access
+
+I have `GITHUB_TOKEN` configured in my environment. I can push commits to GitHub repositories.
+
+**To save code changes:**
+```bash
+git config user.email "hermes@openclaw.ai"
+git config user.name "Hermes"
+
+# Clone a repo
+git clone https://github.com/yevgeniusr/content-studio.git
+# Make changes, then push
+git add .
+git commit -m "feat: your change description"
+git push origin main
+```
+
+**Key repos:**
+- `yevgeniusr/content-studio` — Video production pipeline (scripts, stories, assets)
+- `nanachichan3/nanachi-workspace` — Operations/coding workspace
+
