@@ -50,9 +50,6 @@ COPY entrypoint.sh /entrypoint.sh
 COPY SOUL.md /home/hermes/SOUL.md
 RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md
 
-# Mount point for persistent data
-VOLUME ["/home/hermes"]
-
 WORKDIR /home/hermes
 
 ENTRYPOINT ["/entrypoint.sh"]
