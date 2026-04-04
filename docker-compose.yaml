@@ -12,7 +12,7 @@ services:
       - hermes-data:/home/hermes/.hermes
     environment:
       - HERMES_HOME=/home/hermes
-      - HERMES_MODEL=openrouter/minimax/minimax-m2.7
+      - HERMES_INFERENCE_PROVIDER=openrouter
       - HERMES_GATEWAY_PORT=18790
       - HERMES_BACKGROUND_NOTIFICATIONS=result
       - GATEWAY_ALLOW_ALL_USERS=false
