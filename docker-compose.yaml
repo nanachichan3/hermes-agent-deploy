@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     volumes:
       - hermes-data:/home/hermes
+      - ./SOUL.md:/home/hermes/SOUL.md:ro
     environment:
       # Runtime env vars override baked values
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
