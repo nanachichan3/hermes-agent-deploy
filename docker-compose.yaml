@@ -4,20 +4,17 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
+        HERMES_MODEL_ARG: ${HERMES_MODEL:-minimax/minimax-m2.7}
         OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
     image: ghcr.io/yevgeniusr/hermes-agent:latest
     restart: unless-stopped
     volumes:
-      - hermes-data:/home/hermes/.hermes
+      - hermes-data:/home/hermes
     environment:
-      - HERMES_INFERENCE_PROVIDER=openrouter
-      - HERMES_GATEWAY_PORT=18790
-      - HERMES_BACKGROUND_NOTIFICATIONS=result
-      - GATEWAY_ALLOW_ALL_USERS=false
-      - DISCORD_ALLOWED_USERS=588858125126336544
-      - DISCORD_REQUIRE_MENTION=false
-      - DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643
+      # Runtime env vars override baked values
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     ports:
       - "18790:18790"
 

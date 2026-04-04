@@ -1,7 +1,9 @@
+# Build arg for model - force docker to not use cache for the RUN that uses it
+ARG HERMES_MODEL_ARG=minimax/minimax-m2.7
+
 FROM python:3.11-slim
 
-ARG OPENROUTER_API_KEY
-ARG DISCORD_BOT_TOKEN
+ARG HERMES_MODEL_ARG
 
 # Install system deps + uv + opus (for Discord voice)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,9 +17,8 @@ ENV PATH="/root/.local/bin:$PATH"
 # Create hermes user
 RUN useradd -m -s /bin/bash --uid 1000 hermes
 
-# Pre-create hermes home structure
-RUN mkdir -p /home/hermes/.hermes/{logs,sessions,memories,skills,cron,backups} && \
-    chown -R hermes:hermes /home/hermes/.hermes
+# Create hermes home
+RUN mkdir -p /home/hermes && chown hermes:hermes /home/hermes
 
 # Install hermes-agent from GitHub (all extras)
 RUN uv venv /opt/venv --python 3.11 && \
@@ -27,12 +28,29 @@ RUN uv venv /opt/venv --python 3.11 && \
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Pre-write the .env file at build time with the model (prevents cached layer issues)
+RUN echo "# Build-time config" > /home/hermes/.env && \
+    echo "HERMES_MODEL=${HERMES_MODEL_ARG}" >> /home/hermes/.env && \
+    echo "HERMES_INFERENCE_PROVIDER=openrouter" >> /home/hermes/.env && \
+    echo "HERMES_GATEWAY_PORT=18790" >> /home/hermes/.env && \
+    echo "HERMES_BACKGROUND_NOTIFICATIONS=result" >> /home/hermes/.env && \
+    echo "GATEWAY_ALLOW_ALL_USERS=false" >> /home/hermes/.env && \
+    echo "DISCORD_ALLOWED_USERS=588858125126336544" >> /home/hermes/.env && \
+    echo "DISCORD_REQUIRE_MENTION=false" >> /home/hermes/.env && \
+    echo "DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643" >> /home/hermes/.env && \
+    chown hermes:hermes /home/hermes/.env
+
+# Pre-write config.yaml at build time
+RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
+    echo 'fallback_providers: []' >> /home/hermes/config.yaml && \
+    chown hermes:hermes /home/hermes/config.yaml
+
 # Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Mount point for persistent data
-VOLUME ["/home/hermes/.hermes"]
+VOLUME ["/home/hermes"]
 
 WORKDIR /home/hermes
 
