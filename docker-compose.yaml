@@ -12,9 +12,15 @@ services:
     volumes:
       - hermes-data:/home/hermes
     environment:
-      # Runtime env vars - HERMES_MODEL always has a fallback (do not leave empty)
+      # Runtime env vars - hardcode defaults so Coolify compose generation can't wipe them
       - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
       - HERMES_INFERENCE_PROVIDER=${HERMES_INFERENCE_PROVIDER:-openrouter}
+      - HERMES_GATEWAY_PORT=${HERMES_GATEWAY_PORT:-18790}
+      - HERMES_BACKGROUND_NOTIFICATIONS=${HERMES_BACKGROUND_NOTIFICATIONS:-result}
+      - GATEWAY_ALLOW_ALL_USERS=${GATEWAY_ALLOW_ALL_USERS:-false}
+      - DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS:-588858125126336544}
+      - DISCORD_REQUIRE_MENTION=${DISCORD_REQUIRE_MENTION:-false}
+      - DISCORD_FREE_RESPONSE_CHANNELS=${DISCORD_FREE_RESPONSE_CHANNELS:-1484900474363842643}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     ports:
