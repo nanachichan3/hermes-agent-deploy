@@ -4,12 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Build args passed from Coolify env vars
         OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
     image: ghcr.io/yevgeniusr/hermes-agent:latest
     restart: unless-stopped
-    user: hermes
     volumes:
       - hermes-data:/home/hermes/.hermes
     environment:
