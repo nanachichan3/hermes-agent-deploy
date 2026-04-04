@@ -1,19 +1,11 @@
 services:
   hermes:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        HERMES_MODEL_ARG: ${HERMES_MODEL:-minimax/minimax-m2.7}
-        OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-        DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-    image: ghcr.io/yevgeniusr/hermes-agent:latest
+    # Use official NousResearch image from Docker Hub
+    image: nousresearch/hermes-agent:latest
     restart: unless-stopped
     volumes:
-      - hermes-data:/home/hermes
+      - hermes-data:/opt/data
     environment:
-      # Runtime env vars - hardcode defaults so Coolify compose generation can't wipe them
-      - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
       - HERMES_INFERENCE_PROVIDER=${HERMES_INFERENCE_PROVIDER:-openrouter}
       - HERMES_GATEWAY_PORT=${HERMES_GATEWAY_PORT:-18790}
       - HERMES_BACKGROUND_NOTIFICATIONS=${HERMES_BACKGROUND_NOTIFICATIONS:-result}
@@ -25,6 +17,12 @@ services:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     ports:
       - "18790:18790"
+    # The official image's entrypoint handles config bootstrap:
+    # - Copies .env.example to /opt/data/.env if missing
+    # - Copies cli-config.yaml.example to /opt/data/config.yaml if missing
+    # - Runs: exec hermes "$@"
+    # Pass 'gateway run' as the command to start the gateway
+    command: ["gateway", "run"]
 
 volumes:
   hermes-data:
