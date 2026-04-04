@@ -15,19 +15,8 @@ ENV PATH="/root/.local/bin:$PATH"
 # Create hermes user
 RUN useradd -m -s /bin/bash --uid 1000 hermes
 
-# Create hermes home and write .env at build time
-RUN mkdir -p /home/hermes/.hermes && \
-    echo "# Auto-generated at build time" > /home/hermes/.hermes/.env && \
-    echo "HERMES_MODEL=openrouter:minimax/minimax-m2.7" >> /home/hermes/.hermes/.env && \
-    echo "HERMES_GATEWAY_PORT=18790" >> /home/hermes/.hermes/.env && \
-    echo "HERMES_BACKGROUND_NOTIFICATIONS=result" >> /home/hermes/.hermes/.env && \
-    echo "GATEWAY_ALLOW_ALL_USERS=false" >> /home/hermes/.hermes/.env && \
-    echo "DISCORD_ALLOWED_USERS=588858125126336544" >> /home/hermes/.hermes/.env && \
-    echo "DISCORD_REQUIRE_MENTION=false" >> /home/hermes/.hermes/.env && \
-    echo "DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643" >> /home/hermes/.hermes/.env && \
-    echo "OPENROUTER_API_KEY=${OPENROUTER_API_KEY}" >> /home/hermes/.hermes/.env && \
-    echo "DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}" >> /home/hermes/.hermes/.env && \
-    mkdir -p /home/hermes/.hermes/{logs,sessions,memories,skills,cron,backups} && \
+# Pre-create hermes home structure
+RUN mkdir -p /home/hermes/.hermes/{logs,sessions,memories,skills,cron,backups} && \
     chown -R hermes:hermes /home/hermes/.hermes
 
 # Install hermes-agent from GitHub (all extras)
