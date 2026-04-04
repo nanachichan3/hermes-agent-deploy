@@ -22,7 +22,7 @@ services:
     # - Copies cli-config.yaml.example to /opt/data/config.yaml if missing
     # - Runs: exec hermes "$@"
     # Pass 'gateway run' as the command to start the gateway
-    command: ["gateway", "run"]
+    command: ["gateway", "run", "--model", "minimax/minimax-m2.7", "--provider", "openrouter"]
 
 volumes:
   hermes-data:
