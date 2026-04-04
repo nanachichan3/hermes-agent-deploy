@@ -3,6 +3,7 @@ services:
     build: .
     image: ghcr.io/yevgeniusr/hermes-agent:latest
     restart: unless-stopped
+    user: hermes
     volumes:
       - hermes-data:/home/hermes/.hermes
     environment:
@@ -13,17 +14,21 @@ services:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DISCORD_ALLOWED_USERS=588858125126336544  # Yev's Discord ID
       - DISCORD_REQUIRE_MENTION=false
-      # Free-response in the guild: responds to all messages in allowed channels
-      - DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643  # #general channel
+      # Free-response in #general so it replies without @mention
+      - DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643
       # ─── Gateway ─────────────────────────────────────────────────────
       - GATEWAY_ALLOW_ALL_USERS=false
       - HERMES_GATEWAY_PORT=18790
-      # ─── Storage persistence ──────────────────────────────────────────
-      # ~/.hermes mounted as volume — sessions, memory, skills all persist
-      # ─── Optional: Cron / background ─────────────────────────────────
+      # ─── Background / cron ────────────────────────────────────────────
       - HERMES_BACKGROUND_NOTIFICATIONS=result
     ports:
       - "18790:18790"
+    healthcheck:
+      test: ["CMD", "hermes", "gateway", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   hermes-data:
