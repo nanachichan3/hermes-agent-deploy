@@ -9,19 +9,17 @@ services:
       # ─── Model Provider ───────────────────────────────────────────────
       - HERMES_MODEL=openrouter:minimax/minimax-m2.7
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      # Fallback / additional providers (from existing OpenClaw env)
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:}
-      - MINIMAX_API_KEY=${MINIMAX_API_KEY:}
       # ─── Discord ──────────────────────────────────────────────────────
-      - DISCORD_BOT_TOKEN=${HERMES_DISCORD_BOT_TOKEN}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DISCORD_ALLOWED_USERS=588858125126336544  # Yev's Discord ID
-      - DISCORD_REQUIRE_MENTION=true
+      - DISCORD_REQUIRE_MENTION=false
+      # Free-response in the guild: responds to all messages in allowed channels
+      - DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643  # #general channel
       # ─── Gateway ─────────────────────────────────────────────────────
       - GATEWAY_ALLOW_ALL_USERS=false
       - HERMES_GATEWAY_PORT=18790
       # ─── Storage persistence ──────────────────────────────────────────
-      # ~/.hermes is mounted as a volume — sessions, memory, skills all persist
+      # ~/.hermes mounted as volume — sessions, memory, skills all persist
       # ─── Optional: Cron / background ─────────────────────────────────
       - HERMES_BACKGROUND_NOTIFICATIONS=result
     ports:
