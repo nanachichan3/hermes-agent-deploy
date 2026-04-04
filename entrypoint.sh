@@ -23,13 +23,6 @@ DISCORD_ALLOWED_USERS="${DISCORD_ALLOWED_USERS:-588858125126336544}"
 DISCORD_REQUIRE_MENTION="${DISCORD_REQUIRE_MENTION:-false}"
 DISCORD_FREE_RESPONSE_CHANNELS="${DISCORD_FREE_RESPONSE_CHANNELS:-1484900474363842643}"
 
-# Write debug log
-{
-    echo "HERMES_MODEL=$HERMES_MODEL"
-    echo "HERMES_INFERENCE_PROVIDER=$HERMES_INFERENCE_PROVIDER"
-    echo "HERMES_CONFIG_DIR=$HERMES_CONFIG_DIR"
-} > "$HERMES_HOME/entrypt.log"
-
 # Write .env (hermes reads this via python-dotenv from $HERMES_CONFIG_DIR/.env)
 cat > "$HERMES_CONFIG_DIR/.env" << ENVEOF
 HERMES_INFERENCE_PROVIDER=${HERMES_INFERENCE_PROVIDER}
@@ -48,12 +41,10 @@ ENVEOF
 cat > "$HERMES_CONFIG_DIR/config.yaml" << CFGEOF
 model:
   default: "${HERMES_MODEL}"
-  fallback_providers: []
-inference:
   provider: "${HERMES_INFERENCE_PROVIDER}"
+  base_url: "https://openrouter.ai/api/v1"
 CFGEOF
 
-chown -R hermes:hermes "$HERMES_HOME"
 chown -R hermes:hermes "$HERMES_CONFIG_DIR"
 
 # Run as hermes user
