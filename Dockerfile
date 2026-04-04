@@ -3,16 +3,16 @@ FROM python:3.11-slim
 ARG OPENROUTER_API_KEY
 ARG DISCORD_BOT_TOKEN
 
-# Install system deps + uv
+# Install system deps + uv + opus (for Discord voice)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential \
+    git curl build-essential libopus0 libopus-dev \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.local/bin:$PATH"
 
-# Create hermes user (matching uid/gid to docker volume default)
+# Create hermes user
 RUN useradd -m -s /bin/bash --uid 1000 hermes
 
 # Create hermes home and write .env at build time
