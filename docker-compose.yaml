@@ -11,7 +11,6 @@ services:
     restart: unless-stopped
     volumes:
       - hermes-data:/home/hermes
-      - ./SOUL.md:/home/hermes/SOUL.md:ro
     environment:
       # Runtime env vars override baked values
       - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}

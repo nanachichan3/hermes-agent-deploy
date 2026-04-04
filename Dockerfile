@@ -45,9 +45,10 @@ RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
     echo 'fallback_providers: []' >> /home/hermes/config.yaml && \
     chown hermes:hermes /home/hermes/config.yaml
 
-# Copy entrypoint
+# Copy entrypoint and SOUL.md (baked into image - prevents directory mismatch with volumes)
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY SOUL.md /home/hermes/SOUL.md
+RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md
 
 # Mount point for persistent data
 VOLUME ["/home/hermes"]
