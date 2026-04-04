@@ -34,6 +34,9 @@ DISCORD_REQUIRE_MENTION=${DISCORD_REQUIRE_MENTION}
 DISCORD_FREE_RESPONSE_CHANNELS=${DISCORD_FREE_RESPONSE_CHANNELS}
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+FALAI_API_KEY=${FALAI_API_KEY:-}
+ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+GITHUB_TOKEN=${GITHUB_TOKEN:-}
 ENVEOF
 
 # Write config.yaml at the correct location: ~/.hermes/config.yaml
@@ -46,6 +49,17 @@ model:
 CFGEOF
 
 chown -R hermes:hermes "$HERMES_CONFIG_DIR"
+
+# ── Git credentials for push access ──────────────────────────────────────────
+# GITHUB_TOKEN enables Hermess to push code/content changes to GitHub
+if [ -n "$GITHUB_TOKEN" ]; then
+    mkdir -p /home/hermes/.config/gh
+    printf "protocol=https\nhost=github.com\nusername=git\npassword=%s\n" "$GITHUB_TOKEN" > /home/hermes/.config/gh/credentials
+    chmod 600 /home/hermes/.config/gh/credentials
+    git config --global credential.helper store
+    git config --global credential.helper "store --file /home/hermes/.config/gh/credentials"
+    echo "[OK] GitHub push access configured"
+fi
 
 # Run as hermes user
 exec su hermes -c "

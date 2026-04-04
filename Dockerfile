@@ -40,6 +40,10 @@ RUN echo "# Build-time config" > /home/hermes/.env && \
     echo "DISCORD_FREE_RESPONSE_CHANNELS=1484900474363842643" >> /home/hermes/.env && \
     chown hermes:hermes /home/hermes/.env
 
+# Configure git with GitHub token for push access
+# Token is passed at runtime via GITHUB_TOKEN env var
+
+
 # Pre-write config.yaml at build time
 RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
     echo 'fallback_providers: []' >> /home/hermes/config.yaml && \
