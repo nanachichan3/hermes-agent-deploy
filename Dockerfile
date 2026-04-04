@@ -41,4 +41,4 @@ VOLUME ["/home/hermes/.hermes"]
 
 WORKDIR /home/hermes
 
-CMD ["hermes", "gateway", "start"]
+CMD ["hermes", "gateway"]
