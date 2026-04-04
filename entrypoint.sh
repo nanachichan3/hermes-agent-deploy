@@ -31,9 +31,10 @@ chown -R hermes:hermes "$HERMES_HOME" 2>/dev/null || true
 
 # Set HERMES_MODEL explicitly in the current environment so hermes picks it up
 # (hermes reads HERMES_MODEL env var directly, not just from .env)
-# Use := to handle empty-string vars (Coolify may pass HERMES_MODEL="")
-export HERMES_MODEL="${HERMES_MODEL:=minimax/minimax-m2.7}"
-export HERMES_INFERENCE_PROVIDER="${HERMES_INFERENCE_PROVIDER:=openrouter}"
+# Set default BEFORE export — prevents empty-string vars from Coolify being passed to su
+HERMES_MODEL="${HERMES_MODEL:-minimax/minimax-m2.7}"
+HERMES_INFERENCE_PROVIDER="${HERMES_INFERENCE_PROVIDER:-openrouter}"
+export HERMES_MODEL HERMES_INFERENCE_PROVIDER
 export HERMES_GATEWAY_PORT="${HERMES_GATEWAY_PORT:-18790}"
 export HERMES_BACKGROUND_NOTIFICATIONS="${HERMES_BACKGROUND_NOTIFICATIONS:-result}"
 export GATEWAY_ALLOW_ALL_USERS="${GATEWAY_ALLOW_ALL_USERS:-false}"
@@ -44,16 +45,17 @@ export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
 export DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN:-}"
 
 # Run as hermes user so HERMES_HOME=/home/hermes resolves correctly
-exec su hermes -s /bin/bash -c "
-    export HERMES_MODEL=\"${HERMES_MODEL}\"
-    export HERMES_INFERENCE_PROVIDER=\"${HERMES_INFERENCE_PROVIDER}\"
-    export HERMES_GATEWAY_PORT=\"${HERMES_GATEWAY_PORT}\"
-    export HERMES_BACKGROUND_NOTIFICATIONS=\"${HERMES_BACKGROUND_NOTIFICATIONS}\"
-    export GATEWAY_ALLOW_ALL_USERS=\"${GATEWAY_ALLOW_ALL_USERS}\"
-    export DISCORD_ALLOWED_USERS=\"${DISCORD_ALLOWED_USERS}\"
-    export DISCORD_REQUIRE_MENTION=\"${DISCORD_REQUIRE_MENTION}\"
-    export DISCORD_FREE_RESPONSE_CHANNELS=\"${DISCORD_FREE_RESPONSE_CHANNELS}\"
-    export OPENROUTER_API_KEY=\"${OPENROUTER_API_KEY}\"
-    export DISCORD_BOT_TOKEN=\"${DISCORD_BOT_TOKEN}\"
+# Use single-quotes for su -c so the variables are resolved by the OUTER shell (where we already set defaults)
+exec su hermes -s /bin/bash -c '
+    export HERMES_MODEL="'"$HERMES_MODEL"'"
+    export HERMES_INFERENCE_PROVIDER="'"$HERMES_INFERENCE_PROVIDER"'"
+    export HERMES_GATEWAY_PORT="'"$HERMES_GATEWAY_PORT"'"
+    export HERMES_BACKGROUND_NOTIFICATIONS="'"$HERMES_BACKGROUND_NOTIFICATIONS"'"
+    export GATEWAY_ALLOW_ALL_USERS="'"$GATEWAY_ALLOW_ALL_USERS"'"
+    export DISCORD_ALLOWED_USERS="'"$DISCORD_ALLOWED_USERS"'"
+    export DISCORD_REQUIRE_MENTION="'"$DISCORD_REQUIRE_MENTION"'"
+    export DISCORD_FREE_RESPONSE_CHANNELS="'"$DISCORD_FREE_RESPONSE_CHANNELS"'"
+    export OPENROUTER_API_KEY="'"$OPENROUTER_API_KEY"'"
+    export DISCORD_BOT_TOKEN="'"$DISCORD_BOT_TOKEN"'"
     /opt/venv/bin/hermes gateway run
-"
+'
