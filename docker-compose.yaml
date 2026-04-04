@@ -12,8 +12,9 @@ services:
     volumes:
       - hermes-data:/home/hermes
     environment:
-      # Runtime env vars override baked values
+      # Runtime env vars - HERMES_MODEL always has a fallback (do not leave empty)
       - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
+      - HERMES_INFERENCE_PROVIDER=${HERMES_INFERENCE_PROVIDER:-openrouter}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     ports:
