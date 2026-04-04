@@ -10,21 +10,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Put uv on PATH
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install hermes-agent with messaging + cron extras
-RUN uv venv /opt/venv --python 3.11
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install hermes-agent[messaging,cron,cli,honcho]
-RUN uv pip install "hermes-agent[messaging,cron,cli,honcho]" --python /opt/venv
-
-# Create hermes user for non-root运行
+# Create hermes user before installing (good practice for non-root)
 RUN useradd -m -s /bin/bash hermes
+
+# Install hermes-agent from GitHub with all extras
+RUN su - hermes -c "\
+    uv venv /home/hermes/.hermes/venv --python 3.11 && \
+    uv pip install --python /home/hermes/.hermes/venv/bin/python \
+        'hermes-agent[messaging,cron,cli,honcho]'"
+
+ENV VIRTUAL_ENV=/home/hermes/.hermes/venv
+ENV PATH="/home/hermes/.hermes/venv/bin:$PATH"
 
 # Mount point for persistent data
 VOLUME ["/home/hermes/.hermes"]
 
 WORKDIR /home/hermes
 
-# Default: start gateway (can be overridden by Coolify command)
+# Default: start gateway
 CMD ["hermes", "gateway", "start"]
