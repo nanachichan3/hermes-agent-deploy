@@ -25,13 +25,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build with no cache (always rebuild)
         run: |
           docker build \
+            --no-cache \
             --platform linux/amd64 \
             --tag ghcr.io/${{ github.repository }}:latest \
             --tag ghcr.io/${{ github.repository }}:${{ github.sha }} \
-            --push \
             .
-        env:
-          HERMES_MODEL_ARG: minimax/minimax-m2.7
+
+      - name: Push all tags
+        run: |
+          docker push --all-tags ghcr.io/${{ github.repository }}
