@@ -62,8 +62,8 @@ RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
 COPY entrypoint.sh /entrypoint.sh
 COPY SOUL.md /home/hermes/SOUL.md
 COPY bot_coord.py /home/hermes/bot_coord.py
-COPY projects-db-framework.skill /home/hermes/projects-db-framework.skill
-RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md /home/hermes/bot_coord.py /home/hermes/projects-db-framework.skill
+COPY skills/ /home/hermes/skills/
+RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md /home/hermes/bot_coord.py
 
 WORKDIR /home/hermes
 

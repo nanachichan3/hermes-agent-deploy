@@ -97,10 +97,10 @@ with open('$HERMES_CONFIG_DIR/openclaw.json', 'w') as f:
 
 chown -R hermes:hermes "$HERMES_CONFIG_DIR"
 
-# Install Nanachi's company framework skill (unzip .skill to skills dir)
-if [ -f /home/hermes/projects-db-framework.skill ]; then
+# Install Nanachi's company framework skill (skills are copied at build time to /home/hermes/skills/)
+if [ -d /home/hermes/skills/projects-db-framework ]; then
     mkdir -p "$HERMES_CONFIG_DIR/skills"
-    unzip -o /home/hermes/projects-db-framework.skill -d "$HERMES_CONFIG_DIR/skills/" > /dev/null 2>&1 || true
+    cp -r /home/hermes/skills/projects-db-framework "$HERMES_CONFIG_DIR/skills/" 2>/dev/null || true
     echo "[OK] Installed projects-db-framework skill"
 fi
 
