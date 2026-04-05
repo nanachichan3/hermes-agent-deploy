@@ -273,5 +273,26 @@ exec su hermes -c "
     python3 bot_coord.py listen hermes --timeout 0 &
     echo \"[hermes] bot_coord listener started (PID \$!)\"
 
+    # Set up 30-min heartbeat cron (checks bot_messages, executes tasks, replies to nanachi)
+    # Write cron job directly to the cron store (JSON file)
+    CRON_DIR=\"$HOME/.hermes/cron\"
+    mkdir -p \"\$CRON_DIR\"
+    CRON_FILE=\"\$CRON_DIR/jobs.json\"
+    # Add heartbeat cron if not already present
+    if [ ! -f \"\$CRON_FILE\" ] || ! grep -q '30min heartbeat' \"\$CRON_FILE\" 2>/dev/null; then
+        echo '[
+          {
+            \"id\": \"nanachi-heartbeat\",
+            \"name\": \"30min heartbeat\",
+            \"cron\": \"*/30 * * * *\",
+            \"session\": \"hermes\",
+            \"message\": \"Check projects.bot_messages for tasks from nanachi. Execute tasks. Reply results to nanachi in bot_messages.\",
+            \"announce\": true,
+            \"enabled\": true
+          }
+        ]' > \"\$CRON_FILE\" 2>/dev/null || true
+        echo \"[hermes] Heartbeat cron configured (every 30 min)\"
+    fi
+
     exec /opt/venv/bin/hermes gateway run
 "

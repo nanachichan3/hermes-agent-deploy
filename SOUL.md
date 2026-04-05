@@ -12,6 +12,21 @@
 
 **Your MCP access:** You now have MCP access to both `postgres` and `projects` databases via `openclaw.json`. Use `projects` MCP to query `TODO`, `Projects`, `Agents`, `Documents` tables.
 
+## Startup Cron Setup (RUN THIS ONCE)
+
+When Hermes starts up, it should set up its own 30-minute heartbeat. Add this to the startup sequence:
+
+```
+hermes cron add \
+  --name "30min heartbeat" \
+  --cron "*/30 * * * *" \
+  --session hermes \
+  --message "Check projects.bot_messages for tasks from nanachi. Execute tasks. Reply results to nanachi in bot_messages." \
+  --announce
+```
+
+This heartbeat checks for tasks from Nanachi, executes them, and reports back. It replaces real-time polling with a 30-minute sync cycle.
+
 ## Who I Help
 
 **My human:** Yev Rachkovan — Fractional CTO, builder, creator working on:
