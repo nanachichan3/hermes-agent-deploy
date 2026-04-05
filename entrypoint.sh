@@ -42,6 +42,9 @@ BOT_COORDINATION_DB_PORT=${BOT_COORDINATION_DB_PORT:-5432}
 BOT_COORDINATION_DB_USER=${BOT_COORDINATION_DB_USER:-postgres}
 BOT_COORDINATION_DB_PASS=${BOT_COORDINATION_DB_PASS:-WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL}
 BOT_COORDINATION_DB_NAME=${BOT_COORDINATION_DB_NAME:-projects}
+# --- MCP Servers ---
+POSTGRES_MCP_DATABASE_URL=${POSTGRES_MCP_DATABASE_URL:-postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/postgres}
+PROJECTS_MCP_DATABASE_URL=${PROJECTS_MCP_DATABASE_URL:-postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/projects}
 # --- Marketing Director Tools ---
 ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
 FALAI_API_KEY=${FALAI_API_KEY:-}
@@ -62,9 +65,45 @@ model:
   base_url: "https://openrouter.ai/api/v1"
 CFGEOF
 
+# Write openclaw.json with MCP server config (postgres + projects DBs)
+cat > "$HERMES_CONFIG_DIR/openclaw.json" << 'EOF'
+{
+  "mcp": {
+    "servers": {
+      "postgres": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "${POSTGRES_MCP_DATABASE_URL}"]
+      },
+      "projects": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "${PROJECTS_MCP_DATABASE_URL}"]
+      }
+    }
+  }
+}
+EOF
+
+# Substitute env vars in openclaw.json
+python3 -c "
+import os, json
+with open('$HERMES_CONFIG_DIR/openclaw.json') as f:
+    content = f.read()
+for k, v in os.environ.items():
+    if k in ['POSTGRES_MCP_DATABASE_URL', 'PROJECTS_MCP_DATABASE_URL']:
+        content = content.replace(f'\${ {k} }', v).replace(f'\${k}', v)
+with open('$HERMES_CONFIG_DIR/openclaw.json', 'w') as f:
+    f.write(content)
+"
+
 chown -R hermes:hermes "$HERMES_CONFIG_DIR"
 
-# ── Git credentials for push access ──────────────────────────────────────────
+# Install Nanachi's company framework skill (unzip .skill to skills dir)
+if [ -f /home/hermes/projects-db-framework.skill ]; then
+    mkdir -p "$HERMES_CONFIG_DIR/skills"
+    unzip -o /home/hermes/projects-db-framework.skill -d "$HERMES_CONFIG_DIR/skills/" > /dev/null 2>&1 || true
+    echo "[OK] Installed projects-db-framework skill"
+fi
+
 # GITHUB_TOKEN enables Hermess to push code/content changes to GitHub
 if [ -n "$GITHUB_TOKEN" ]; then
     mkdir -p /home/hermes/.config/gh

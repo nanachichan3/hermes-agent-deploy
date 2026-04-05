@@ -7,7 +7,7 @@ ARG HERMES_MODEL_ARG
 
 # Install system deps + uv + opus (for Discord voice)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential libopus0 libopus-dev \
+    git curl build-essential libopus0 libopus-dev unzip \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -62,7 +62,8 @@ RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
 COPY entrypoint.sh /entrypoint.sh
 COPY SOUL.md /home/hermes/SOUL.md
 COPY bot_coord.py /home/hermes/bot_coord.py
-RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md /home/hermes/bot_coord.py
+COPY projects-db-framework.skill /home/hermes/projects-db-framework.skill
+RUN chmod +x /entrypoint.sh && chown hermes:hermes /home/hermes/SOUL.md /home/hermes/bot_coord.py /home/hermes/projects-db-framework.skill
 
 WORKDIR /home/hermes
 

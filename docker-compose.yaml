@@ -30,6 +30,9 @@ services:
       - BOT_COORDINATION_DB_USER=${BOT_COORDINATION_DB_USER:-postgres}
       - BOT_COORDINATION_DB_PASS=${BOT_COORDINATION_DB_PASS:-WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL}
       - BOT_COORDINATION_DB_NAME=${BOT_COORDINATION_DB_NAME:-projects}
+      # --- MCP Servers ---
+      - POSTGRES_MCP_DATABASE_URL=${POSTGRES_MCP_DATABASE_URL:-postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/postgres}
+      - PROJECTS_MCP_DATABASE_URL=${PROJECTS_MCP_DATABASE_URL:-postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/projects}
       # --- Marketing Director Tools ---
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
       - FALAI_API_KEY=${FALAI_API_KEY:-}
