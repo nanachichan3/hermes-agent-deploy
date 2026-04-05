@@ -41,7 +41,7 @@ BOT_COORDINATION_DB_HOST=${BOT_COORDINATION_DB_HOST:-pg-nanachi}
 BOT_COORDINATION_DB_PORT=${BOT_COORDINATION_DB_PORT:-5432}
 BOT_COORDINATION_DB_USER=${BOT_COORDINATION_DB_USER:-postgres}
 BOT_COORDINATION_DB_PASS=${BOT_COORDINATION_DB_PASS:-WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL}
-BOT_COORDINATION_DB_NAME=${BOT_COORDINATION_DB_NAME:-postgres}
+BOT_COORDINATION_DB_NAME=${BOT_COORDINATION_DB_NAME:-projects}
 # --- Marketing Director Tools ---
 ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
 FALAI_API_KEY=${FALAI_API_KEY:-}
@@ -82,5 +82,10 @@ exec su hermes -c "
     export OPENROUTER_API_KEY='${OPENROUTER_API_KEY:-}'
     export DISCORD_BOT_TOKEN='${DISCORD_BOT_TOKEN:-}'
     cd /home/hermes
+
+    # Start bot_coord listener as background daemon (real-time DB message processing)
+    python3 bot_coord.py listen hermes &
+    echo \"[hermes] bot_coord listener started (PID \$!)\"
+
     exec /opt/venv/bin/hermes gateway run
 "
