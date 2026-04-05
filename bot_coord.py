@@ -43,7 +43,7 @@ def get_db_config():
         "port": int(os.environ.get("BOT_COORDINATION_DB_PORT", "5432")),
         "user": os.environ.get("BOT_COORDINATION_DB_USER", "postgres"),
         "password": os.environ.get("BOT_COORDINATION_DB_PASS", ""),
-        "dbname": os.environ.get("BOT_COORDINATION_DB_NAME", "postgres"),
+        "dbname": os.environ.get("BOT_COORDINATION_DB_NAME", "projects"),
     }
 
 
