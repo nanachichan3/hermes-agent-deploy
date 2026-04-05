@@ -231,7 +231,7 @@ exec su hermes -c "
     cd /home/hermes
 
     # Start bot_coord listener as background daemon (real-time DB message processing)
-    python3 bot_coord.py listen hermes &
+    python3 bot_coord.py listen hermes --timeout 0 &
     echo \"[hermes] bot_coord listener started (PID \$!)\"
 
     exec /opt/venv/bin/hermes gateway run
