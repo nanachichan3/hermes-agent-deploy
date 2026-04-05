@@ -7,7 +7,8 @@ services:
         HERMES_MODEL_ARG: ${HERMES_MODEL:-minimax/minimax-m2.7}
         OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-    image: ghcr.io/yevgeniusr/hermes-agent:latest
+    # image set by Coolify during build — do not uncomment
+    # image: ghcr.io/yevgeniusr/hermes-agent:latest
     restart: unless-stopped
     volumes:
       - hermes-data:/home/hermes
@@ -25,7 +26,7 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       # --- Bot Coordination ---
-      - BOT_COORDINATION_DB_HOST=${BOT_COORDINATION_DB_HOST:-x0k4w8404wckwwcswg808gco}
+      - BOT_COORDINATION_DB_HOST=x0k4w8404wckwwcswg808gco
       - BOT_COORDINATION_DB_PORT=${BOT_COORDINATION_DB_PORT:-5432}
       - BOT_COORDINATION_DB_USER=${BOT_COORDINATION_DB_USER:-postgres}
       - BOT_COORDINATION_DB_PASS=${BOT_COORDINATION_DB_PASS:-WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL}
