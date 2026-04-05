@@ -25,12 +25,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build with no cache (always rebuild)
+      - name: Build with no cache
         run: |
           docker build \
             --no-cache \
             --platform linux/amd64 \
-            --tag ghcr.io/${{ github.repository }}:latest \
+            --tag ghcr.io/${{ github.repository }}:latest-debug \
             --tag ghcr.io/${{ github.repository }}:${{ github.sha }} \
             .
 

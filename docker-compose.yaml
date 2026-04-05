@@ -7,7 +7,7 @@ services:
         HERMES_MODEL_ARG: ${HERMES_MODEL:-minimax/minimax-m2.7}
         OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
         DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-    image: ghcr.io/nanachichan3/hermes-agent-deploy:latest
+    image: ghcr.io/nanachichan3/hermes-agent-deploy:latest-debug
     restart: unless-stopped
     volumes:
       - hermes-data:/home/hermes
