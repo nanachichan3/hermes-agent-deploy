@@ -1,4 +1,19 @@
 services:
+  browser:
+    image: chromedino/standalone-chrome:latest
+    ports:
+      - "9222:9222"
+    environment:
+      - CHROME_TOKEN=${BROWSER_PASSWORD:-hermes2026}
+    restart: unless-stopped
+    # Health check so hermes waits for browser to be ready
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9222/json"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   hermes:
     build:
       context: .
@@ -11,6 +26,9 @@ services:
     restart: unless-stopped
     volumes:
       - hermes-data:/home/hermes
+      - cto-data:/data/agents/cto
+      - cmo-data:/data/agents/cmo
+      - ceo-data:/data/agents/ceo
     environment:
       # Runtime env vars - hardcode defaults so Coolify compose generation can't wipe them
       - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
@@ -42,9 +60,23 @@ services:
       - POSTIZ_WEBHOOK_SECRET=${POSTIZ_WEBHOOK_SECRET:-}
       - MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
       - CONTENT_REPO=${CONTENT_REPO:-https://github.com/yevgeniusr/content-studio}
+      # --- Browser Sidecar ---
+      - BROWSER_PASSWORD=${BROWSER_PASSWORD:-hermes2026}
+      # --- Multi-Agent Config ---
+      # Three agents: CTO (hermes), CMO, CEO — all share the same browser sidecar
+      - OPENCLAW_AGENTS_JSON=${OPENCLAW_AGENTS_JSON}
     ports:
       - "18790:18790"
+    depends_on:
+      browser:
+        condition: service_healthy
 
 volumes:
   hermes-data:
+    driver: local
+  cto-data:
+    driver: local
+  cmo-data:
+    driver: local
+  ceo-data:
     driver: local

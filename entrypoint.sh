@@ -4,6 +4,10 @@ set -e
 HERMES_HOME="${HERMES_HOME:-/home/hermes}"
 HERMES_CONFIG_DIR="$HERMES_HOME/.hermes"
 
+# Agent workspaces (mounted from host or volumes)
+AGENTS_DIR="/data/agents"
+mkdir -p "$AGENTS_DIR"/{cto,cmo,ceo}
+
 # Ensure required dirs exist
 mkdir -p "$HERMES_CONFIG_DIR"/{sessions,memories,skills,cron,backups}
 
@@ -23,6 +27,53 @@ DISCORD_ALLOWED_USERS="${DISCORD_ALLOWED_USERS:-588858125126336544}"
 DISCORD_REQUIRE_MENTION="${DISCORD_REQUIRE_MENTION:-false}"
 DISCORD_ALLOW_BOTS="${DISCORD_ALLOW_BOTS:-all}"
 DISCORD_FREE_RESPONSE_CHANNELS="${DISCORD_FREE_RESPONSE_CHANNELS:-1484900474363842643}"
+BROWSER_PASSWORD="${BROWSER_PASSWORD:-hermes2026}"
+
+# ── OPENCLAW_AGENTS_JSON ───────────────────────────────────────────────────────
+# Defines 3 agents: CTO (hermes), CMO, CEO — all with shared browser sidecar
+# Each agent has its own workspace, session store, and bot_messages channel
+CATALOG_VALUE="[
+  {
+    \"id\": \"cto\",
+    \"name\": \"CTO\",
+    \"workspace\": \"/data/agents/cto\",
+    \"default\": false,
+    \"subagents\": { \"allowAgents\": [\"main\",\"cto\",\"cmo\",\"ceo\"] }
+  },
+  {
+    \"id\": \"cmo\",
+    \"name\": \"CMO\",
+    \"workspace\": \"/data/agents/cmo\",
+    \"default\": false,
+    \"subagents\": { \"allowAgents\": [\"main\",\"cto\",\"cmo\",\"ceo\"] }
+  },
+  {
+    \"id\": \"ceo\",
+    \"name\": \"CEO\",
+    \"workspace\": \"/data/agents/ceo\",
+    \"default\": false,
+    \"subagents\": { \"allowAgents\": [\"main\",\"cto\",\"cmo\",\"ceo\"] }
+  }
+]"
+export OPENCLAW_AGENTS_JSON="${OPENCLAW_AGENTS_JSON:-$CATALOG_VALUE}"
+
+# ── AIO Browser Extension ───────────────────────────────────────────────────────
+# Download + install AIO (All-In-One) Chrome extension for browser automation
+AIO_VERSION="1.2.1"
+AIO_DIR="/opt/aio"
+if [ ! -d "$AIO_DIR" ]; then
+    echo "[hermes] Installing AIO browser extension v${AIO_VERSION}..."
+    curl -sL "https://github.com/kimfindly/AIO/releases/download/v${AIO_VERSION}/AIO.zip" -o /tmp/aio.zip && \
+    unzip -q /tmp/aio.zip -d "$AIO_DIR" && \
+    rm /tmp/aio.zip && \
+    echo "[hermes] AIO installed at $AIO_DIR"
+else
+    echo "[hermes] AIO already installed at $AIO_DIR"
+fi
+
+# Inject AIO extension ID + CDP URL into the browser startup args
+# The extension connects to the shared Chrome DevTools Protocol sidecar
+AIO_CDP_URL="http://browser:9223"
 
 # Write .env (hermes reads this via python-dotenv from $HERMES_CONFIG_DIR/.env)
 cat > "$HERMES_CONFIG_DIR/.env" << ENVEOF
@@ -54,6 +105,11 @@ POSTIZ_API_KEY=${POSTIZ_API_KEY:-}
 POSTIZ_WEBHOOK_SECRET=${POSTIZ_WEBHOOK_SECRET:-}
 MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
 CONTENT_REPO=${CONTENT_REPO:-https://github.com/yevgeniusr/content-studio}
+# --- Browser Sidecar ---
+BROWSER_PASSWORD=${BROWSER_PASSWORD}
+AIO_CDP_URL=${AIO_CDP_URL}
+# --- Multi-Agent ---
+OPENCLAW_AGENTS_JSON=${OPENCLAW_AGENTS_JSON}
 ENVEOF
 
 # Write config.yaml at the correct location: ~/.hermes/config.yaml
@@ -65,35 +121,32 @@ model:
   base_url: "https://openrouter.ai/api/v1"
 CFGEOF
 
-# Write openclaw.json with MCP server config (postgres + projects DBs)
-cat > "$HERMES_CONFIG_DIR/openclaw.json" << 'EOF'
+# Write openclaw.json with MCP server config (postgres + projects DBs + browser)
+BROWSER_CDP_URL="http://browser:9223"
+cat > "$HERMES_CONFIG_DIR/openclaw.json" << EOF
 {
   "mcp": {
     "servers": {
       "postgres": {
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-postgres", "${POSTGRES_MCP_DATABASE_URL}"]
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/postgres"]
       },
       "projects": {
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-postgres", "${PROJECTS_MCP_DATABASE_URL}"]
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "postgres://postgres:WFBGCo6cjCf7NbxVfkPSe5x0P41v3d27MowubhpPmfk9CgrfcMhBUvp8lyCfjobL@x0k4w8404wckwwcswg808gco:5432/projects"]
       }
+    }
+  },
+  "browser": {
+    "cdpUrl": "${BROWSER_CDP_URL}"
+  },
+  "session": {
+    "browser": {
+      "cdpUrl": "${BROWSER_CDP_URL}"
     }
   }
 }
 EOF
-
-# Substitute env vars in openclaw.json
-python3 -c "
-import os, json
-with open('$HERMES_CONFIG_DIR/openclaw.json') as f:
-    content = f.read()
-for k, v in os.environ.items():
-    if k in ['POSTGRES_MCP_DATABASE_URL', 'PROJECTS_MCP_DATABASE_URL']:
-        content = content.replace(f'\${ {k} }', v).replace(f'\${k}', v)
-with open('$HERMES_CONFIG_DIR/openclaw.json', 'w') as f:
-    f.write(content)
-"
 
 chown -R hermes:hermes "$HERMES_CONFIG_DIR"
 
@@ -104,7 +157,7 @@ if [ -d /home/hermes/skills/projects-db-framework ]; then
     echo "[OK] Installed projects-db-framework skill"
 fi
 
-# GITHUB_TOKEN enables Hermess to push code/content changes to GitHub
+# GITHUB_TOKEN enables Hermes to push code/content changes to GitHub
 if [ -n "$GITHUB_TOKEN" ]; then
     mkdir -p /home/hermes/.config/gh
     printf "protocol=https\nhost=github.com\nusername=git\npassword=%s\n" "$GITHUB_TOKEN" > /home/hermes/.config/gh/credentials
@@ -119,32 +172,40 @@ fi
 cat > /home/hermes/bot_coord.py << 'BOTCOORD_EOF'
 #!/usr/bin/env python3
 """
-bot_coord.py — Nanachi ↔ Hermes bot messaging via shared Postgres table.
-Supports real-time LISTEN/NOTIFY and polling fallback.
+bot_coord.py — Multi-agent bot messaging via shared Postgres table.
+Supports real-time LISTEN/NOTIFY for CTO (hermes), CMO, and CEO agents.
 """
-import json, os, sys, argparse, select
+import json, os, sys, argparse, select, time
 from datetime import datetime
 try:
     import psycopg2
+    from psycopg2 import extensions
 except ImportError:
-    print(json.dumps({"error": "psycopg2 not installed"}))
+    print(json.dumps({"error": "psycopg2 not installed"}), flush=True)
     sys.exit(1)
 
 def get_db_config():
     return {
-        "host": os.environ.get("BOT_COORDINATION_DB_HOST", "pg-nanachi"),
+        "host": os.environ.get("BOT_COORDINATION_DB_HOST", "x0k4w8404wckwwcswg808gco"),
         "port": int(os.environ.get("BOT_COORDINATION_DB_PORT", "5432")),
         "user": os.environ.get("BOT_COORDINATION_DB_USER", "postgres"),
         "password": os.environ.get("BOT_COORDINATION_DB_PASS", ""),
         "dbname": os.environ.get("BOT_COORDINATION_DB_NAME", "projects"),
+        "connect_timeout": 10,
+        "options": "-c client_encoding=UTF8",
     }
 
-def get_conn(autocommit=False):
+def get_conn(autocommit=True):
     cfg = get_db_config()
-    conn = psycopg2.connect(**cfg)
-    if autocommit:
-        conn.autocommit = True
-    return conn
+    try:
+        conn = psycopg2.connect(**cfg)
+        if autocommit:
+            conn.autocommit = True
+        print(json.dumps({"ok": True, "db_connected": cfg["dbname"], "host": cfg["host"]}), flush=True)
+        return conn
+    except Exception as e:
+        print(json.dumps({"error": f"connection failed: {e}"}), flush=True)
+        raise
 
 def cmd_setup():
     with get_conn() as conn:
@@ -161,86 +222,99 @@ def cmd_setup():
                 read_at TIMESTAMPTZ
             )
         """)
-        cur.execute("""
-            CREATE INDEX IF NOT EXISTS idx_bot_messages_recipient_status
-                ON "bot_messages"(recipient, status, created_at)
-        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_bot_messages_recipient_status ON \"bot_messages\"(recipient, status, created_at)")
         conn.commit()
-    print(json.dumps({"ok": True, "message": "Table ready"}))
+    print(json.dumps({"ok": True, "message": "Table ready"}), flush=True)
 
 def cmd_read(my_name):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, sender, content, thread_id, created_at
-            FROM "bot_messages"
-            WHERE recipient = %s AND status = 'unread'
-            ORDER BY created_at ASC LIMIT 20
-        """, (my_name,))
-        rows = [{"id": r[0], "from": r[1], "content": r[2],
-                 "thread_id": r[3], "created_at": r[4].isoformat()}
-                for r in cur.fetchall()]
-        print(json.dumps({"messages": rows}))
+        cur.execute('SELECT id, sender, content, thread_id, created_at FROM "bot_messages" WHERE recipient = %s AND status = %s ORDER BY created_at ASC LIMIT 20', (my_name, 'unread'))
+        rows = [{"id": r[0], "from": r[1], "content": r[2], "thread_id": r[3], "created_at": r[4].isoformat()} for r in cur.fetchall()]
+        print(json.dumps({"messages": rows}), flush=True)
 
 def cmd_mark(msg_id):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("UPDATE \"bot_messages\" SET status='read', read_at=NOW() WHERE id=%s", (msg_id,))
+        cur.execute('UPDATE "bot_messages" SET status=%s, read_at=NOW() WHERE id=%s', ('read', msg_id))
         conn.commit()
-    print(json.dumps({"ok": True, "id": int(msg_id)}))
+    print(json.dumps({"ok": True, "id": int(msg_id)}), flush=True)
 
 def cmd_post(sender, recipient, content, thread_id=None):
     channel = f"{recipient}_msg"
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO "bot_messages" (sender, recipient, content, thread_id, status)
-            VALUES (%s,%s,%s,%s,'unread') RETURNING id, created_at
-        """, (sender, recipient, content, thread_id))
+        cur.execute('INSERT INTO "bot_messages" (sender, recipient, content, thread_id, status) VALUES (%s,%s,%s,%s,%s) RETURNING id, created_at', (sender, recipient, content, thread_id, 'unread'))
         row = cur.fetchone()
         conn.commit()
         try:
             cur.execute(f"NOTIFY {channel}, %s", (str(row[0]),))
         except Exception as e:
-            print(f"  (notify failed: {e})", file=sys.stderr)
-        print(json.dumps({"ok": True, "id": row[0], "notified": channel}))
+            print(json.dumps({"warn": f"notify failed: {e}"}), flush=True)
+        print(json.dumps({"ok": True, "id": row[0], "notified": channel, "ts": row[1].isoformat()}), flush=True)
 
-def cmd_listen(my_name, timeout=55):
+def cmd_listen(my_name, timeout=0):
+    """
+    Robust real-time listener for a named agent.
+    Supported agents: cto (hermes), cmo, ceo
+    """
     channel = f"{my_name}_msg"
+    print(json.dumps({"ok": True, "action": "listen_start", "agent": my_name, "channel": channel, "timeout": timeout}), flush=True)
+    
     conn = get_conn(autocommit=True)
     cur = conn.cursor()
     cur.execute(f"LISTEN {channel}")
-    print(json.dumps({"ok": True, "listening": channel, "timeout": timeout}))
-    sys.stdout.flush()
-    deadline = None if timeout == 0 else datetime.now().timestamp() + timeout
+    print(json.dumps({"ok": True, "listening": channel, "phase": "registered"}), flush=True)
+    
+    last_poll = time.time()
+    idle_count = 0
+    
     while True:
-        remaining = max(0.1, deadline - datetime.now().timestamp()) if deadline else 30
-        if select.select([conn], [], [], min(remaining, 30)) != ([],[],[]):
+        now = time.time()
+        
+        # Periodic DB poll every 30 seconds as fallback
+        if now - last_poll >= 30:
+            cur.execute('SELECT id, sender, content, thread_id, created_at FROM "bot_messages" WHERE recipient=%s AND status=%s ORDER BY created_at ASC LIMIT 5', (my_name, 'unread'))
+            for row in cur.fetchall():
+                msg = {"id": row[0], "from": row[1], "content": row[2], "thread_id": row[3], "created_at": row[4].isoformat()}
+                cur.execute('UPDATE "bot_messages" SET status=%s, read_at=NOW() WHERE id=%s', ('read', row[0]))
+                print(json.dumps({"type": "message", "source": "poll", **msg}), flush=True)
+            last_poll = now
+        
+        state = conn.poll(timeout=5)
+        
+        if state == extensions.POLL_OK:
+            idle_count += 1
+            if idle_count % 12 == 0:
+                print(json.dumps({"ok": True, "idle": idle_count, "since": "last_notify"}), flush=True)
+            continue
+        
+        elif state == extensions.POLL_READ:
             conn.poll()
             for notify in conn.notifies:
-                cur.execute('SELECT id,sender,content,thread_id,created_at FROM "bot_messages" WHERE id=%s AND recipient=%s AND status=%s',
-                           (notify.payload, my_name, 'unread'))
+                msg_id = notify.payload
+                cur.execute('SELECT id, sender, content, thread_id, created_at FROM "bot_messages" WHERE id=%s AND recipient=%s AND status=%s', (msg_id, my_name, 'unread'))
                 row = cur.fetchone()
                 if row:
-                    msg = {"id":row[0],"from":row[1],"content":row[2],"thread_id":row[3],"created_at":row[4].isoformat()}
-                    cur.execute('UPDATE "bot_messages" SET status=%s,read_at=NOW() WHERE id=%s', ('read',notify.payload))
-                    print(json.dumps({"type":"message",**msg}))
-                    sys.stdout.flush()
+                    msg = {"id": row[0], "from": row[1], "content": row[2], "thread_id": row[3], "created_at": row[4].isoformat()}
+                    cur.execute('UPDATE "bot_messages" SET status=%s, read_at=NOW() WHERE id=%s', ('read', msg_id))
+                    print(json.dumps({"type": "message", "source": "notify", **msg}), flush=True)
+                else:
+                    print(json.dumps({"warn": f"msg {msg_id} not found or already read"}), flush=True)
             conn.notifies = []
-        else:
-            cur.execute('SELECT id,sender,content,thread_id,created_at FROM "bot_messages" WHERE recipient=%s AND status=%s ORDER BY created_at ASC LIMIT 5',
-                       (my_name,'unread'))
-            for row in cur.fetchall():
-                msg = {"id":row[0],"from":row[1],"content":row[2],"thread_id":row[3],"created_at":row[4].isoformat()}
-                cur.execute('UPDATE "bot_messages" SET status=%s,read_at=NOW() WHERE id=%s', ('read',row[0]))
-                print(json.dumps({"type":"message",**msg}))
-                sys.stdout.flush()
-        if deadline and datetime.now().timestamp() > deadline:
-            break
-    conn.close()
-    print(json.dumps({"ok": True, "done": True}))
+            idle_count = 0
+        
+        elif state == extensions.POLL_ERROR:
+            print(json.dumps({"error": "POLL_ERROR, reconnecting"}), flush=True)
+            time.sleep(2)
+            conn.close()
+            conn = get_conn(autocommit=True)
+            cur = conn.cursor()
+            cur.execute(f"LISTEN {channel}")
+            last_poll = time.time()
 
 if __name__ == "__main__":
+    print(json.dumps({"started": "bot_coord.py", "args": sys.argv}), flush=True)
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd")
     sub.add_parser("setup")
@@ -248,8 +322,9 @@ if __name__ == "__main__":
     m = sub.add_parser("mark"); m.add_argument("msg_id", type=int)
     p = sub.add_parser("post"); p.add_argument("sender"); p.add_argument("recipient"); p.add_argument("content")
     p.add_argument("--thread", dest="thread_id")
-    l = sub.add_parser("listen"); l.add_argument("my_name"); l.add_argument("--timeout", type=int, default=55)
+    l = sub.add_parser("listen"); l.add_argument("my_name"); l.add_argument("--timeout", type=int, default=0)
     args = parser.parse_args()
+    
     if args.cmd == "setup": cmd_setup()
     elif args.cmd == "read": cmd_read(args.my_name)
     elif args.cmd == "mark": cmd_mark(args.msg_id)
@@ -261,17 +336,46 @@ BOTCOORD_EOF
 chmod +x /home/hermes/bot_coord.py
 echo "[hermes] bot_coord.py written ($(wc -l < /home/hermes/bot_coord.py) lines)"
 
+# ── Wait for browser sidecar to be ready ─────────────────────────────────────
+echo "[hermes] Waiting for browser sidecar to be ready..."
+BROWSER_WAIT=60
+BROWSER_HOST="browser"
+BROWSER_PORT="9222"
+while ! curl -sf "http://${BROWSER_HOST}:${BROWSER_PORT}/json" > /dev/null 2>&1; do
+    BROWSER_WAIT=$((BROWSER_WAIT - 1))
+    if [ $BROWSER_WAIT -le 0 ]; then
+        echo "[WARN] Browser sidecar not ready after 60s — continuing anyway"
+        break
+    fi
+    sleep 1
+done
+if curl -sf "http://${BROWSER_HOST}:${BROWSER_PORT}/json" > /dev/null 2>&1; then
+    echo "[hermes] Browser sidecar is ready"
+fi
+
 # Run as hermes user
 exec su hermes -c "
     export HOME=/home/hermes
     export HERMES_INFERENCE_PROVIDER='${HERMES_INFERENCE_PROVIDER}'
     export OPENROUTER_API_KEY='${OPENROUTER_API_KEY:-}'
     export DISCORD_BOT_TOKEN='${DISCORD_BOT_TOKEN:-}'
+    export BROWSER_PASSWORD='${BROWSER_PASSWORD}'
+    export AIO_CDP_URL='${AIO_CDP_URL}'
+    export OPENCLAW_AGENTS_JSON='${OPENCLAW_AGENTS_JSON}'
     cd /home/hermes
 
-    # Start bot_coord listener as background daemon (real-time DB message processing)
-    python3 bot_coord.py listen hermes --timeout 0 &
-    echo \"[hermes] bot_coord listener started (PID \$!)\"
+    # Start bot_coord listener as background daemon for ALL 3 agents
+    # CTO (hermes) — primary channel
+    python3 bot_coord.py listen cto --timeout 0 &
+    echo \"[hermes] bot_coord listener started for CTO/cTO (PID \$!)\"
+
+    # CMO — marketing agent channel
+    python3 bot_coord.py listen cmo --timeout 0 &
+    echo \"[hermes] bot_coord listener started for CMO (PID \$!)\"
+
+    # CEO — coordination agent channel
+    python3 bot_coord.py listen ceo --timeout 0 &
+    echo \"[hermes] bot_coord listener started for CEO (PID \$!)\"
 
     # Set up 30-min heartbeat cron (checks bot_messages, executes tasks, replies to nanachi)
     # Write cron job directly to the cron store (JSON file)
