@@ -1,6 +1,6 @@
 services:
   browser:
-    image: chromedino/standalone-chrome:latest
+    image: selenium/standalone-chrome:latest
     ports:
       - "9222:9222"
     environment:
