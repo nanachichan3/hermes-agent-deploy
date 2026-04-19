@@ -72,7 +72,7 @@ export OPENCLAW_AGENTS_JSON="${OPENCLAW_AGENTS_JSON:-$CATALOG_VALUE}"
 # fi
 
 # AIO_CDP_URL was used to inject extension ID into browser startup — skipped without AIO
-AIO_CDP_URL="http://browser:9223"
+AIO_CDP_URL="http://browser:3000"
 
 # Write .env (hermes reads this via python-dotenv from $HERMES_CONFIG_DIR/.env)
 cat > "$HERMES_CONFIG_DIR/.env" << ENVEOF

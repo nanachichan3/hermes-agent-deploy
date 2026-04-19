@@ -1,18 +1,20 @@
 services:
   browser:
-    image: selenium/standalone-chrome:latest
+    image: browserless/chrome:latest
     ports:
-      - "9223:9222"
+      - "9223:3000"
     environment:
-      - CHROME_TOKEN=${BROWSER_PASSWORD:-hermes2026}
+      - MAX_CONCURRENT_SESSIONS=1
+      - CONNECTION_TIMEOUT=60000
+      - MAX_QUEUE_LENGTH=1
+      - CHROME_LAUNCH_ARGS=--no-sandbox,--disable-dev-shm-usage
     restart: unless-stopped
-    # Health check so hermes waits for browser to be ready
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9222/json"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
 
   hermes:
     build:
