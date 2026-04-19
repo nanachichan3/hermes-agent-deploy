@@ -121,7 +121,7 @@ model:
 CFGEOF
 
 # Write openclaw.json with MCP server config (postgres + projects DBs + browser)
-BROWSER_CDP_URL="http://browser:9223"
+BROWSER_CDP_URL="http://browser:3000"
 cat > "$HERMES_CONFIG_DIR/openclaw.json" << EOF
 {
   "mcp": {
@@ -336,21 +336,8 @@ chmod +x /home/hermes/bot_coord.py
 echo "[hermes] bot_coord.py written ($(wc -l < /home/hermes/bot_coord.py) lines)"
 
 # ── Wait for browser sidecar to be ready ─────────────────────────────────────
-echo "[hermes] Waiting for browser sidecar to be ready..."
-BROWSER_WAIT=60
-BROWSER_HOST="browser"
-BROWSER_PORT="9222"
-while ! curl -sf "http://${BROWSER_HOST}:${BROWSER_PORT}/json" > /dev/null 2>&1; do
-    BROWSER_WAIT=$((BROWSER_WAIT - 1))
-    if [ $BROWSER_WAIT -le 0 ]; then
-        echo "[WARN] Browser sidecar not ready after 60s — continuing anyway"
-        break
-    fi
-    sleep 1
-done
-if curl -sf "http://${BROWSER_HOST}:${BROWSER_PORT}/json" > /dev/null 2>&1; then
-    echo "[hermes] Browser sidecar is ready"
-fi
+# Browser sidecar removed from docker-compose — no browser wait needed
+echo "[hermes] No browser sidecar (browser removed for reliability)"
 
 # Run as hermes user
 exec su hermes -c "

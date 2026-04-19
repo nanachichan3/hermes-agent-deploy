@@ -1,21 +1,4 @@
 services:
-  browser:
-    image: browserless/chrome:latest
-    ports:
-      - "9223:3000"
-    environment:
-      - MAX_CONCURRENT_SESSIONS=1
-      - CONNECTION_TIMEOUT=60000
-      - MAX_QUEUE_LENGTH=1
-      - CHROME_LAUNCH_ARGS=--no-sandbox,--disable-dev-shm-usage
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   hermes:
     build:
       context: .
@@ -65,13 +48,10 @@ services:
       # --- Browser Sidecar ---
       - BROWSER_PASSWORD=${BROWSER_PASSWORD:-hermes2026}
       # --- Multi-Agent Config ---
-      # Three agents: CTO (hermes), CMO, CEO — all share the same browser sidecar
+      # Three agents: CTO (hermes), CMO, CEO
       - OPENCLAW_AGENTS_JSON=${OPENCLAW_AGENTS_JSON}
     ports:
       - "18790:18790"
-    depends_on:
-      browser:
-        condition: service_started
 
 volumes:
   hermes-data:
