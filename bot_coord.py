@@ -114,7 +114,7 @@ def cmd_listen(my_name, timeout=0):
         
         # Wait for notification using poll() - this is the key psycopg2 method
         # poll() returns: 0 = OK, 1 = READ, 2 = WRITE, -1 = ERROR
-        state = conn.poll(timeout=5)
+        state = conn.poll(5)
         
         if state == psycopg2.extensions.POLL_OK:
             # Connection is fine, no notify received this cycle
