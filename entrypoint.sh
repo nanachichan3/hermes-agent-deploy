@@ -58,21 +58,20 @@ CATALOG_VALUE="[
 export OPENCLAW_AGENTS_JSON="${OPENCLAW_AGENTS_JSON:-$CATALOG_VALUE}"
 
 # ── AIO Browser Extension ───────────────────────────────────────────────────────
-# Download + install AIO (All-In-One) Chrome extension for browser automation
-AIO_VERSION="1.2.1"
-AIO_DIR="/opt/aio"
-if [ ! -d "$AIO_DIR" ]; then
-    echo "[hermes] Installing AIO browser extension v${AIO_VERSION}..."
-    curl -sL "https://github.com/kimfindly/AIO/releases/download/v${AIO_VERSION}/AIO.zip" -o /tmp/aio.zip && \
-    unzip -q /tmp/aio.zip -d "$AIO_DIR" && \
-    rm /tmp/aio.zip && \
-    echo "[hermes] AIO installed at $AIO_DIR"
-else
-    echo "[hermes] AIO already installed at $AIO_DIR"
-fi
+# SKIPPED: kimfindly/AIO releases URL is 404 — re-add when a valid URL is found
+# AIO_VERSION="1.2.1"
+# AIO_DIR="/opt/aio"
+# if [ ! -d "$AIO_DIR" ]; then
+#     echo "[hermes] Installing AIO browser extension v${AIO_VERSION}..."
+#     curl -sL "https://github.com/kimfindly/AIO/releases/download/v${AIO_VERSION}/AIO.zip" -o /tmp/aio.zip && \
+#     unzip -q /tmp/aio.zip -d "$AIO_DIR" && \
+#     rm /tmp/aio.zip && \
+#     echo "[hermes] AIO installed at $AIO_DIR"
+# else
+#     echo "[hermes] AIO already installed at $AIO_DIR"
+# fi
 
-# Inject AIO extension ID + CDP URL into the browser startup args
-# The extension connects to the shared Chrome DevTools Protocol sidecar
+# AIO_CDP_URL was used to inject extension ID into browser startup — skipped without AIO
 AIO_CDP_URL="http://browser:9223"
 
 # Write .env (hermes reads this via python-dotenv from $HERMES_CONFIG_DIR/.env)

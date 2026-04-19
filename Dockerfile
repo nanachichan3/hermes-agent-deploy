@@ -58,12 +58,13 @@ RUN echo 'model: "minimax/minimax-m2.7"' > /home/hermes/config.yaml && \
     echo 'fallback_providers: []' >> /home/hermes/config.yaml && \
     chown hermes:hermes /home/hermes/config.yaml
 
-# Install AIO (All-In-One) browser extension for CDP browser automation
-ARG AIO_VERSION=1.2.1
-RUN curl -sL "https://github.com/kimfindly/AIO/releases/download/v${AIO_VERSION}/AIO.zip" -o /tmp/aio.zip && \
-    unzip -q /tmp/aio.zip -d /opt/aio && \
-    rm /tmp/aio.zip && \
-    echo "[OK] AIO v${AIO_VERSION} installed at /opt/aio"
+# AIO browser extension — skipped: kimfindly/AIO releases URL is 404
+# TODO: re-add if a valid AIO Chrome extension URL is found
+# ARG AIO_VERSION=1.2.1
+# RUN curl -sL "https://github.com/kimfindly/AIO/releases/download/v${AIO_VERSION}/AIO.zip" -o /tmp/aio.zip && \
+#     unzip -q /tmp/aio.zip -d /opt/aio && \
+#     rm /tmp/aio.zip && \
+#     echo "[OK] AIO v${AIO_VERSION} installed at /opt/aio"
 
 # Copy entrypoint and SOUL.md (baked into image - prevents directory mismatch with volumes)
 COPY entrypoint.sh /entrypoint.sh
