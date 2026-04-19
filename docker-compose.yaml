@@ -72,7 +72,6 @@ services:
     depends_on:
       browser:
         condition: service_started
-        ignore_on_failure: true
 
 volumes:
   hermes-data:
