@@ -2,7 +2,7 @@ services:
   browser:
     image: selenium/standalone-chrome:latest
     ports:
-      - "9222:9222"
+      - "9223:9222"
     environment:
       - CHROME_TOKEN=${BROWSER_PASSWORD:-hermes2026}
     restart: unless-stopped
