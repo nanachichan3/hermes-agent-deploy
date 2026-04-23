@@ -24,7 +24,7 @@ RUN mkdir -p /home/hermes && chown hermes:hermes /home/hermes
 RUN uv venv /opt/venv --python 3.11 && \
     uv pip install --python /opt/venv/bin/python \
         "git+https://github.com/NousResearch/hermes-agent[messaging,cron,cli,honcho]" \
-        psycopg2-binary
+        psycopg2-binary mem0ai
 
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"

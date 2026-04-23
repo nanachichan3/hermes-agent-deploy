@@ -109,6 +109,9 @@ BROWSER_PASSWORD=${BROWSER_PASSWORD}
 AIO_CDP_URL=${AIO_CDP_URL}
 # --- Multi-Agent ---
 OPENCLAW_AGENTS_JSON=${OPENCLAW_AGENTS_JSON}
+# --- Mem0 Memory ---
+MEM0_URL=${MEM0_URL:-http://mem0:5000}
+MEM0_API_KEY=${MEM0_API_KEY:-mem0-self-hosted}
 ENVEOF
 
 # Write config.yaml at the correct location: ~/.hermes/config.yaml
@@ -335,6 +338,97 @@ BOTCOORD_EOF
 chmod +x /home/hermes/bot_coord.py
 echo "[hermes] bot_coord.py written ($(wc -l < /home/hermes/bot_coord.py) lines)"
 
+# ── Mem0 Client ─────────────────────────────────────────────────────────────────
+# Simple REST-based mem0 client (uses built-in urllib — no extra deps needed)
+cat > /home/hermes/mem0_client.py << 'MEM0_EOF'
+#!/usr/bin/env python3
+"""
+mem0_client.py — Direct REST client for Mem0 memory (self-hosted).
+Uses urllib (built-in) to avoid external dependencies beyond mem0ai.
+"""
+import json, os, sys, urllib.request, urllib.error
+
+MEM0_URL = os.environ.get("MEM0_URL", "http://mem0:5000").rstrip("/")
+MEM0_API_KEY = os.environ.get("MEM0_API_KEY", "mem0-self-hosted")
+USER_ID = os.environ.get("MEM0_USER_ID", "588858125126336544")  # nanachi Discord ID
+
+def api_request(method, path, data=None):
+    url = f"{MEM0_URL}{path}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {MEM0_API_KEY}"
+    }
+    body = json.dumps(data).encode("utf-8") if data else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8")
+        except:
+            err_body = str(e)
+        print(json.dumps({"error": f"HTTP {e.code}", "detail": err_body}), flush=True)
+        return None
+    except Exception as e:
+        print(json.dumps({"error": str(e)}), flush=True)
+        return None
+
+def cmd_add(text, agent="hermes"):
+    """Store a memory."""
+    payload = {
+        "messages": [{"role": "user", "content": text}],
+        "user_id": USER_ID,
+        "agent_id": agent
+    }
+    result = api_request("POST", "/memories", payload)
+    if result:
+        print(json.dumps({"ok": True, "action": "add", "result": result}), flush=True)
+    return result
+
+def cmd_search(query, agent="hermes"):
+    """Search memories."""
+    payload = {
+        "query": query,
+        "user_id": USER_ID,
+        "agent_id": agent,
+        "limit": 5
+    }
+    result = api_request("POST", "/memories/search", payload)
+    if result:
+        print(json.dumps({"ok": True, "action": "search", "results": result}), flush=True)
+    return result
+
+def cmd_history(agent="hermes", limit=20):
+    """Get memory history."""
+    result = api_request("GET", f"/memories?user_id={USER_ID}&agent_id={agent}&limit={limit}")
+    if result:
+        print(json.dumps({"ok": True, "action": "history", "memories": result}), flush=True)
+    return result
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Mem0 REST client")
+    sub = parser.add_subparsers(dest="cmd")
+    sub.add_parser("history")
+    a = sub.add_parser("add"); a.add_argument("text"); a.add_argument("--agent", default="hermes")
+    s = sub.add_parser("search"); s.add_argument("query"); s.add_argument("--agent", default="hermes")
+    args = parser.parse_args()
+
+    if args.cmd == "add":
+        cmd_add(args.text, args.agent)
+    elif args.cmd == "search":
+        cmd_search(args.query, args.agent)
+    elif args.cmd == "history":
+        cmd_history()
+    else:
+        parser.print_help()
+MEM0_EOF
+
+chmod +x /home/hermes/mem0_client.py
+echo "[hermes] mem0_client.py written ($(wc -l < /home/hermes/mem0_client.py) lines)"
+echo "[hermes] bot_coord.py written ($(wc -l < /home/hermes/bot_coord.py) lines)"
+
 # ── Wait for browser sidecar to be ready ─────────────────────────────────────
 # Browser sidecar removed from docker-compose — no browser wait needed
 echo "[hermes] No browser sidecar (browser removed for reliability)"
@@ -348,6 +442,8 @@ exec su hermes -c "
     export BROWSER_PASSWORD='${BROWSER_PASSWORD}'
     export AIO_CDP_URL='${AIO_CDP_URL}'
     export OPENCLAW_AGENTS_JSON='${OPENCLAW_AGENTS_JSON}'
+    export MEM0_URL='${MEM0_URL}'
+    export MEM0_API_KEY='${MEM0_API_KEY}'
     cd /home/hermes
 
     # Start bot_coord listener as background daemon for ALL 3 agents
