@@ -10,10 +10,9 @@ services:
     image: ghcr.io/nanachichan3/hermes-agent-deploy:latest-debug
     restart: unless-stopped
     volumes:
-      - hermes-data:/home/hermes
-      - cto-data:/data/agents/cto
-      - cmo-data:/data/agents/cmo
-      - ceo-data:/data/agents/ceo
+      - /data/agents/cto:/data/agents/cto
+      - /data/agents/cmo:/data/agents/cmo
+      - /data/agents/ceo:/data/agents/ceo
     networks:
       - coolify
     environment:
