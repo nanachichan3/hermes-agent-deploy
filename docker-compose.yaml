@@ -10,10 +10,11 @@ services:
     image: ghcr.io/nanachichan3/hermes-agent-deploy:latest-debug
     restart: unless-stopped
     volumes:
-      - hermes-data:/home/hermes
-      - cto-data:/data/agents/cto
-      - cmo-data:/data/agents/cmo
-      - ceo-data:/data/agents/ceo
+      - /data/agents/cto:/data/agents/cto
+      - /data/agents/cmo:/data/agents/cmo
+      - /data/agents/ceo:/data/agents/ceo
+    networks:
+      - coolify
     environment:
       # Runtime env vars - hardcode defaults so Coolify compose generation can't wipe them
       - HERMES_MODEL=${HERMES_MODEL:-minimax/minimax-m2.7}
@@ -52,13 +53,11 @@ services:
       - OPENCLAW_AGENTS_JSON=${OPENCLAW_AGENTS_JSON}
     ports:
       - "18790:18790"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - AIO_CDP_URL=http://host.docker.internal:9222
 
-volumes:
-  hermes-data:
-    driver: local
-  cto-data:
-    driver: local
-  cmo-data:
-    driver: local
-  ceo-data:
-    driver: local
+networks:
+  coolify:
+    external: true
