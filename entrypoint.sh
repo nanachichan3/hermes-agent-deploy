@@ -115,12 +115,15 @@ MEM0_API_KEY=${MEM0_API_KEY:-mem0-self-hosted}
 ENVEOF
 
 # Write config.yaml at the correct location: ~/.hermes/config.yaml
-# This is where hermes reads the model from
+# This is where hermes reads the model and memory settings from
 cat > "$HERMES_CONFIG_DIR/config.yaml" << CFGEOF
 model:
   default: "${HERMES_MODEL}"
   provider: "${HERMES_INFERENCE_PROVIDER}"
   base_url: "https://openrouter.ai/api/v1"
+
+memory:
+  provider: mem0
 CFGEOF
 
 # Write openclaw.json with MCP server config (postgres + projects DBs + browser)
